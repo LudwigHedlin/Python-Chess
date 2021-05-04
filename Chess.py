@@ -14,6 +14,8 @@ class Chess():
         self.captured_white=[]
         self.available_moves=[]
         self.num_moves=0
+        self.current_piece_index=None
+        self.which_turn={0:"W",1:"B"}
 
         self.colors={"W":(200,200,200),"B":(40,40,40)}
         self.reset_board()
@@ -23,6 +25,9 @@ class Chess():
         pygame.quit()
 
     def reset_board(self):
+        self.num_moves=0
+        self.available_moves=[]
+        self.current_piece_index=None
         for i in range(8):
             self.board[i][1]=Chesspieces.Pawn("B")
             self.board[i][6] = Chesspieces.Pawn("W")
@@ -39,11 +44,54 @@ class Chess():
         self.board[3][0],self.board[4][0]=Chesspieces.King("B"),Chesspieces.Queen("B")
         self.board[3][7],self.board[4][7]=Chesspieces.King("W"),Chesspieces.Queen("W")
 
-    def check(self,king_position,king_color):
-        pass
+    def check_check(self,king_position,king_color):
+        for i in range(8):
+            for j in range(8):
+                piece=self.board[i][j]
+                if piece:
+                    if king_color!=piece.color and king_position in piece.get_moves(self.board,(i,j)):
+                        return True
+        
+        return False
 
     def promotion(self):
         pass
+
+    def move(self,position):
+        captured_piece = self.board[position[0]][position[1]]
+        self.board[position[0]][position[1]]=self.board[self.current_piece_index[0]][self.current_piece_index[1]]
+        self.board[self.current_piece_index[0]][self.current_piece_index[1]]=0
+        self.movehistory.append((self.current_piece_index,position,captured_piece))
+        
+        king_index=self.get_king(self.which_turn[self.num_moves%2])
+        
+        if self.check_check(king_index,self.which_turn[self.num_moves%2]):
+            self.undo_move()
+        
+        self.num_moves+=1
+        self.available_moves=[]
+        self.current_piece_index=None
+
+    def get_king(self,color):
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j]:
+                    if self.board[i][j].ID == "Ki" and self.board[i][j].color==color:
+                        return (i,j)
+
+    def undo_move(self):
+        if self.num_moves>0:
+            self.num_moves-=1
+            last_move=self.movehistory.pop()
+            last_piece=last_move[2]
+            last_destination=last_move[1]
+            last_position=last_move[0]
+            self.board[last_position[0]][last_position[1]]=self.board[last_destination[0]][last_destination[1]]
+            self.board[last_destination[0]][last_destination[1]]=last_piece
+            
+            self.available_moves=[]
+            self.current_piece_index=None
+        
 
     def get_available_moves(self,position):
         i=position[0]
@@ -55,16 +103,15 @@ class Chess():
     def draw_board(self):
         for i in range(8):
             for j in range(8):
-                print(i+j)
                 if (i+j)%2==0:
                     self.draw_rect(i,j,(100,30,30))
                 else:
                     self.draw_rect(i,j,(255,255,255))
 
 
-    def draw_available_moves(self,position):
+    def draw_available_moves(self):
         for move in self.available_moves:
-            self.draw_rect(move[1],move[0],(10,200,40))
+            self.draw_rect(move[0],move[1],(10,200,40,1))
 
     def draw_pieces(self):
         for i in range(8):
@@ -87,7 +134,7 @@ class Chess():
     def draw(self):
         self.screen.fill((0, 0, 0))
         self.draw_board()
-        self.draw_available_moves
+        self.draw_available_moves()
         self.draw_pieces()
         pygame.display.update()
 
@@ -108,6 +155,7 @@ class Chess():
 def main():
     chess=Chess()
     chess.draw()
+    
     while chess.running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -116,9 +164,19 @@ def main():
             if event.type==pygame.MOUSEBUTTONDOWN:
                 position=pygame.mouse.get_pos()
                 indexes=chess.get_index_from_pos(position[0],position[1])
-                if chess.board[indexes[0]][indexes[1]]:
-                    chess.available_moves=chess.get_available_moves(indexes)
-                    print(chess.available_moves)
+                piece=chess.board[indexes[0]][indexes[1]]
+                if piece and chess.which_turn[chess.num_moves%2]==piece.color:
+                    chess.current_piece_index=indexes
+                    chess.get_available_moves(indexes)
+                if indexes in chess.available_moves:
+                    chess.move(indexes)
+
+            if event.type==pygame.KEYDOWN:
+                if event.key==pygame.K_z:
+                    chess.undo_move()
+                    
+            
+        chess.draw()
 
 
 main()

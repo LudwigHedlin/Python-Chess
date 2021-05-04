@@ -13,11 +13,12 @@ class Chesspiece():
             moves_temp=self.get_moves_in_direction(board,position,direction)
             for i in moves_temp:
                 moves.append(i)
-
+                
         return moves
 
     def get_moves_in_direction(self, board, position, direction):
         moves = []
+        print(position[0])
         i = position[0]+direction[0]
         j = position[1]+direction[1]
         while self.inbounds(i, j) and not board[i][j]:
@@ -42,19 +43,19 @@ class Pawn(Chesspiece):
 
     def get_moves(self,board,position):
         moves=[]
-        direction = 1 if self.color == "W" else -1
+        print(position)
+        direction = -1 if self.color == "W" else 1
         if not board[position[0]][position[1]+direction]:
             moves.append((position[0], position[1]+direction))
 
         if not (self.moved and board[position[0]][position[1]+2*direction]):
             moves.append((position[0], position[1]+2*direction))
 
-        if board[position[0]-1][position[1]+direction] and board[position[0]-1][position[1]+direction].color!=self.color:
+        if self.inbounds(position[0]-1,position[1]+direction) and board[position[0]-1][position[1]+direction] and board[position[0]-1][position[1]+direction].color != self.color:
             moves.append((position[0]-1, position[1]+direction))
 
-        if board[position[0]+1][position[1]+direction] and board[position[0]+1][position[1]+direction].color != self.color:
+        if self.inbounds(position[0]+1,position[1]+direction) and board[position[0]+1][position[1]+direction] and board[position[0]+1][position[1]+direction].color != self.color:
             moves.append((position[0]+1, position[1]+direction))
-
         return moves
 
 
@@ -88,8 +89,7 @@ class Knight(Chesspiece):
             i=move[0]+position[0]
             j=move[1]+position[1]
             if self.inbounds(i,j) and (not board[i][j] or board[i][j].color!=self.color):
-                moves.append(move+position)
-        
+                moves.append((move[0]+position[0],move[1]+position[1]))
         return moves
 
 class King(Chesspiece):

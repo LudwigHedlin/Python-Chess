@@ -44,7 +44,7 @@ class Chess():
         self.board[3][0],self.board[4][0]=Chesspieces.King("B"),Chesspieces.Queen("B")
         self.board[3][7],self.board[4][7]=Chesspieces.King("W"),Chesspieces.Queen("W")
 
-    def check_check(self,king_position,king_color):
+    def is_check(self,king_position,king_color):
         for i in range(8):
             for j in range(8):
                 piece=self.board[i][j]
@@ -54,8 +54,28 @@ class Chess():
         
         return False
 
+    def get_color(self):
+        return self.which_turn[self.num_moves%2]
+
     def promotion(self):
         pass
+
+    def is_mate(self,king_position,king_color):
+        num_turns=self.num_moves
+        for i in range(8):
+            for j in range(8):
+                piece=self.board[i][j]
+                if piece and piece.color==king_color:
+                    moves=piece.get_moves(self.board, (i, j))
+                    if moves:
+                        for move in moves:
+                            self.current_piece_index=(i,j)
+                            self.move(move)
+                            if num_turns<self.num_moves:
+                                self.undo_move()
+                                return False
+        
+        return True
 
     def move(self,position):
         captured_piece = self.board[position[0]][position[1]]
@@ -63,9 +83,9 @@ class Chess():
         self.board[self.current_piece_index[0]][self.current_piece_index[1]]=0
         self.movehistory.append((self.current_piece_index,position,captured_piece))
         
-        king_index=self.get_king(self.which_turn[self.num_moves%2])
+        king_index=self.get_king(self.get_color())
         
-        if self.check_check(king_index,self.which_turn[self.num_moves%2]):
+        if self.is_check(king_index,self.get_color()):
             self.undo_move()
         
         self.num_moves+=1
@@ -170,6 +190,10 @@ def main():
                     chess.get_available_moves(indexes)
                 if indexes in chess.available_moves:
                     chess.move(indexes)
+                    color=chess.get_color()
+                    if chess.is_check(chess.get_king(color),color):
+                        if chess.is_mate(chess.get_king(color),color):
+                            print("Check mate!")
 
             if event.type==pygame.KEYDOWN:
                 if event.key==pygame.K_z:

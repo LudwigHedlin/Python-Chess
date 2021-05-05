@@ -18,7 +18,6 @@ class Chesspiece():
 
     def get_moves_in_direction(self, board, position, direction):
         moves = []
-        print(position[0])
         i = position[0]+direction[0]
         j = position[1]+direction[1]
         while self.inbounds(i, j) and not board[i][j]:
@@ -38,17 +37,17 @@ class Chesspiece():
 class Pawn(Chesspiece):
     def __init__(self,color):
         self.ID="P"
-        self.moved = False
+        
         self.color=color
+        self.doublemove=6 if color=="W" else 1
 
     def get_moves(self,board,position):
         moves=[]
-        print(position)
         direction = -1 if self.color == "W" else 1
         if not board[position[0]][position[1]+direction]:
             moves.append((position[0], position[1]+direction))
 
-        if not (self.moved and board[position[0]][position[1]+2*direction]):
+        if  self.doublemove==position[1] and not board[position[0]][position[1]+2*direction]:
             moves.append((position[0], position[1]+2*direction))
 
         if self.inbounds(position[0]-1,position[1]+direction) and board[position[0]-1][position[1]+direction] and board[position[0]-1][position[1]+direction].color != self.color:
@@ -104,7 +103,7 @@ class King(Chesspiece):
             i=move[0]+position[0]
             j=move[1]+position[1]
             if self.inbounds(i,j) and (not board[i][j] or board[i][j].color!=self.color):
-                moves.append(move+position)
+                moves.append((move[0]+ position[0],move[1]+position[1]))
         
         return moves
 

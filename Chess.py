@@ -8,7 +8,7 @@ class Chess():
         self.screen=pygame.display.set_mode((1000,800))
         pygame.display.set_caption("Chess")
 
-        self.board = [[0 for x in range(8)] for x in range(8)]
+        self.board = []
         self.movehistory=[]
         self.captured_black=[]
         self.captured_white=[]
@@ -16,6 +16,7 @@ class Chess():
         self.num_moves=0
         self.current_piece_index=None
         self.which_turn={0:"W",1:"B"}
+        self.mate=False
 
         self.colors={"W":(200,200,200),"B":(40,40,40)}
         self.reset_board()
@@ -28,6 +29,8 @@ class Chess():
         self.num_moves=0
         self.available_moves=[]
         self.current_piece_index=None
+        self.mate=False
+        self.board = [[0 for x in range(8)] for x in range(8)]
         for i in range(8):
             self.board[i][1]=Chesspieces.Pawn("B")
             self.board[i][6] = Chesspieces.Pawn("W")
@@ -56,6 +59,8 @@ class Chess():
 
     def get_color(self):
         return self.which_turn[self.num_moves%2]
+
+    
 
     def promotion(self):
         pass
@@ -146,9 +151,7 @@ class Chess():
 
     def draw_string(self,i,j,string,color):
         font = pygame.font.SysFont('bold', 30)
-
         surface = font.render(string, 1, color)
-
         self.screen.blit(surface, (315+i*50, 165+j*50))
 
     def draw(self):
@@ -156,6 +159,9 @@ class Chess():
         self.draw_board()
         self.draw_available_moves()
         self.draw_pieces()
+        if self.mate:
+            self.draw_string(2,-2,"Check Mate!",(0,100,200))
+            self.draw_string(2, -1, "Press Space to Restart", (0, 100, 200))
         pygame.display.update()
 
     def get_index_from_pos(self,x,y):
@@ -181,26 +187,36 @@ def main():
             if event.type == pygame.QUIT:
                 chess.running = False
 
-            if event.type==pygame.MOUSEBUTTONDOWN:
+            if not chess.mate and event.type==pygame.MOUSEBUTTONDOWN:
                 position=pygame.mouse.get_pos()
                 indexes=chess.get_index_from_pos(position[0],position[1])
-                piece=chess.board[indexes[0]][indexes[1]]
-                if piece and chess.which_turn[chess.num_moves%2]==piece.color:
-                    chess.current_piece_index=indexes
-                    chess.get_available_moves(indexes)
-                if indexes in chess.available_moves:
-                    chess.move(indexes)
+                if indexes:
+                    piece=chess.board[indexes[0]][indexes[1]]
                     color=chess.get_color()
-                    if chess.is_check(chess.get_king(color),color):
-                        if chess.is_mate(chess.get_king(color),color):
-                            print("Check mate!")
+
+                    if piece and color==piece.color:
+                        chess.current_piece_index=indexes
+                        chess.get_available_moves(indexes)
+                    if indexes in chess.available_moves:
+                        chess.move(indexes)
+                        color=chess.get_color()
+                        if chess.is_check(chess.get_king(color),color):
+                            if chess.is_mate(chess.get_king(color),color):
+                                chess.mate=True
+                print(chess.mate)
+                chess.draw()
+
+            if chess.mate and event.type==pygame.KEYDOWN and event.key==pygame.K_SPACE:
+                chess.reset_board()
 
             if event.type==pygame.KEYDOWN:
                 if event.key==pygame.K_z:
                     chess.undo_move()
+
+                chess.draw()
                     
             
-        chess.draw()
+        
 
 
 main()
